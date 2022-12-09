@@ -6,8 +6,8 @@ on:
   push:
     tags:
       - "v*.*"
-    branches:
-      - 'main'
+    #branches:
+    #  - 'main'
 
 jobs:
   docker:
@@ -48,5 +48,5 @@ jobs:
           tags: |
             ${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:${{  github.ref_name }}
-           # ghcr.io/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:latest
-           # ghcr.io/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:${{  github.ref_name }}
+            ghcr.io/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ env.USER_NAME }}/${{ env.IMAGE_NAME }}:${{  github.ref_name }}
