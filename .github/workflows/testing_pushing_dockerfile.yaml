@@ -43,6 +43,16 @@ jobs:
         run: |
           echo -e "\nContainer User:"  >> ${{ env.RESULT_FILE }}
           docker exec ${{ env.IMAGE_NAME }} whoami >> ${{ env.RESULT_FILE }}
+          echo "container-user=$(docker exec ${{ env.IMAGE_NAME }} whoami)" >> $GITHUB_OUTPUT
+      - 
+        name: Warning User is root
+        if: ${{ steps.time.outputs.start_timer }} == root
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: 'C04EWNX7BT3'
+          slack-message: "Warning! Building image user is root!"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
       - 
         name: Testing Doker Container with CURL
         run: |
@@ -87,7 +97,7 @@ jobs:
           # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
           channel-id: 'C04EWNX7BT3'
           # For posting a simple plain text message
-          slack-message: "GitHub build result: ${{ needs.docker.outputs.job-status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+          slack-message: "GitHub build result: ${{ needs.docker.outputs.out-job-status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
 
