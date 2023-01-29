@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pywebserver
+  labels:
+    app: pywebserver
+spec:
+  ports:
+    - port: 8000
+  selector:
+    app: pywebserver
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pywebserver
+  labels:
+    app: pywebserver
+spec:
+  selector:
+    matchLabels:
+      app: pywebserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pywebserver
+    spec:
+      containers:
+        - image: sgoser/python-webserver:will_change_in_pipeline
+          name: pywebserver
+          env:
+          ports:
+            - containerPort: 8000
+              name: pywebserver

@@ -54,6 +54,21 @@ pipeline {
                 }
             }
         }
+        stage('Change deployment file in repo') {
+            steps {
+                sh "sed -i 's/will_change_in_pipeline/jv${env.BUILD_ID}/' deployment.yaml"
+            }
+        }
+        stage('Deploy in pre-prod') {
+            steps {
+                withKubeConfig([credentialsId: 'k3skubeconfig']) {
+                sh "kubectl get pods --namespace=pre-prod"
+                sh "kubectl apply -f deployment.yaml --namespace=pre-prod"
+                sleep 5
+                sh "kubectl get pods --namespace=pre-prod"
+                }
+            }
+        }
         stage('Cleaning. Delete builded image') {
             steps {
                 script {
