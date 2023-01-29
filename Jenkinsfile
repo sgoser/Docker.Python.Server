@@ -54,7 +54,7 @@ pipeline {
                 }
             }
         }
-        stage('Change deployment file in repo') {
+        stage('Change deployment file from repo') {
             steps {
                 sh "sed -i 's/will_change_in_pipeline/jv${env.BUILD_ID}/' deployment.yaml"
             }
@@ -62,10 +62,44 @@ pipeline {
         stage('Deploy in pre-prod') {
             steps {
                 withKubeConfig([credentialsId: 'k3skubeconfig']) {
-                sh "kubectl get pods --namespace=pre-prod"
-                sh "kubectl apply -f deployment.yaml --namespace=pre-prod"
+                sh "kubectl get pods -n pre-prod"
+                sh "kubectl apply -f deployment.yaml -n pre-prod"
                 sleep 5
-                sh "kubectl get pods --namespace=pre-prod"
+                sh "kubectl get pods -n pre-prod"
+                }
+            }
+        }
+        stage('Slack Pre-Prod Notification') {
+            steps {
+                slackSend (color: '#00FF00', message: """Deployment to namespace pre-prod is Success!
+The pipeline has been suspended. Please continue the process in the web interface.""")
+            }
+        }
+        stage('Deploy in prod. Cleaning pre-prod') {
+            steps{
+                script {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
+                        def check_depl = true
+                        try{
+                            input("Deploy in prod?")
+                        }
+                        catch(err){
+                            check_depl = false
+                        }
+                        try{
+                            if(check_depl){
+                                withKubeConfig([credentialsId: 'k3skubeconfig']) {
+                                sh 'kubectl delete -f deployment.yaml -n pre-prod'
+                                sh 'kubectl apply -f deployment.yaml -n prod'
+                                sleep 5
+                                sh 'kubectl get pods -n prod'
+                                }
+                            }
+                        }
+                        catch(Exception err){
+                            error "Deployment filed"
+                        }
+                    }
                 }
             }
         }
@@ -75,6 +109,14 @@ pipeline {
                 sh "docker rmi $imagename:jv${env.BUILD_ID}"
                 }
             }
+        }
+    }
+    post {
+        success {
+            slackSend (color: '#00FF00', message: "Deployment to prod Success! \nPipeline: '${env.JOB_NAME} [${env.BUILD_NUMBER}]'")
+        }
+        failure {
+            slackSend (color: '#FF0000', message: "Deployment to prod Failed! \nPipeline: '${env.JOB_NAME} [${env.BUILD_NUMBER}]'")
         }
     }
 }
